@@ -1,0 +1,146 @@
+<?php
+
+namespace LandKit\Route;
+
+trait MiddlewareTrait
+{
+    /**
+     * @var array
+     */
+    private static $middlewares = [];
+
+    /**
+     * @var array
+     */
+    protected static $currentMiddlewares = [];
+
+    /**
+     * @var array
+     */
+    private static $queue = [];
+
+    /**
+     * @var int
+     */
+    private static $currentQueueNumber = 0;
+
+    /**
+     * @param array $value
+     * @return void
+     */
+    public static function setMiddlewares(array $value)
+    {
+        self::$middlewares = $value;
+    }
+
+    /**
+     * @param string ...$values
+     * @return Route
+     */
+    public static function middleware(string ...$values): Route
+    {
+        self::$currentMiddlewares = $values;
+        return self::$instance;
+    }
+
+    /**
+     * @return void
+     */
+    private function resetCurrentMiddlewares()
+    {
+        self::$currentMiddlewares = [];
+    }
+
+    /**
+     * @return bool
+     */
+    private function executeMiddleware(): bool
+    {
+        $middlewares = self::$currentRoute['middleware'];
+
+        self::$queue = array_map(function ($middleware) {
+            $middleware = trim(rtrim($middleware));
+
+            return $this->instanceMiddleware($middleware);
+        }, $middlewares);
+
+        return $this->callMiddlewares();
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    private function getMiddlewareByAlias(string $value): string
+    {
+        if (!array_key_exists($value, self::$middlewares)) {
+            return '';
+        }
+
+        if (class_exists(self::$middlewares[$value])) {
+            return self::$middlewares[$value];
+        }
+
+        return '';
+    }
+
+    /**
+     * @param string $middleware
+     * @return object|null
+     */
+    private function instanceMiddleware(string $middleware)
+    {
+        if (!preg_match('/\\\/', $middleware)) {
+            $middlewareClass = $this->getMiddlewareByAlias($middleware);
+
+            return !$middlewareClass ? null : new $middlewareClass();
+        }
+
+        if (class_exists($middleware)) {
+            return new $middleware();
+        }
+
+        return null;
+    }
+
+    /**
+     * @return bool
+     */
+    private function next(): bool
+    {
+        self::$currentQueueNumber++;
+        return $this->callMiddlewares();
+    }
+
+    /**
+     * @return void
+     */
+    private function reset()
+    {
+        self::$currentQueueNumber = 0;
+    }
+
+    /**
+     * @return bool
+     */
+    private function callMiddlewares(): bool
+    {
+        if (!isset(self::$queue[self::$currentQueueNumber])) {
+            $this->reset();
+            return true;
+        }
+
+        $currentMiddleware = self::$queue[self::$currentQueueNumber];
+
+        if (empty($currentMiddleware)) {
+            return $this->next();
+        }
+
+        return $currentMiddleware->handle(
+            self::$currentRoute['data'],
+            function () {
+                return $this->next();
+            }
+        );
+    }
+}
