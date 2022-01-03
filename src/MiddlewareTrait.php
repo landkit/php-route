@@ -52,19 +52,23 @@ trait MiddlewareTrait
     }
 
     /**
-     * @return bool
+     * @return void
      */
-    private function executeMiddleware(): bool
+    private function prepareMiddlewares()
     {
-        $middlewares = self::$currentRoute['middleware'];
-
-        self::$queue = array_map(function ($middleware) {
+        foreach (self::$currentRoute['middlewares'] as $middleware) {
             $middleware = trim(rtrim($middleware));
 
-            return $this->instanceMiddleware($middleware);
-        }, $middlewares);
+            if (isset(self::$middlewares[$middleware]) && is_array(self::$middlewares[$middleware])) {
+                foreach (self::$middlewares[$middleware] as $class) {
+                    self::$queue[] = $this->instanceMiddleware($class);
+                }
 
-        return $this->callMiddlewares();
+                continue;
+            }
+
+            self::$queue[] = $this->instanceMiddleware($middleware);
+        }
     }
 
     /**

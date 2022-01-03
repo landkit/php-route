@@ -419,10 +419,10 @@ class Route
             return;
         }
 
-        $middleware = self::$currentRoute['middleware'];
+        if (self::$currentRoute['middlewares']) {
+            $this->prepareMiddlewares();
 
-        if ($middleware) {
-            if (!$this->executeMiddleware()) {
+            if (!$this->callMiddlewares()) {
                 self::$fail = self::NOT_FOUND;
                 return;
             }
