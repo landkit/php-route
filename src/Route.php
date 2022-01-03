@@ -392,7 +392,7 @@ class Route
                 'name' => $name,
                 'httpMethod' => $httpMethod,
                 'handler' => $this->handler($handler),
-                'middleware' => self::$currentMiddlewares,
+                'middlewares' => self::$currentMiddlewares,
                 'action' => $this->action($handler),
                 'data' => $data
             ];
