@@ -25,12 +25,33 @@ trait MiddlewareTrait
     private static $currentQueueNumber = 0;
 
     /**
+     * @return array
+     */
+    public static function getMiddlewares(): array
+    {
+        return self::$middlewares;
+    }
+
+    /**
      * @param array $value
      * @return void
      */
     public static function setMiddlewares(array $value)
     {
-        self::$middlewares = $value;
+        self::$middlewares = array_merge(self::$middlewares, $value);
+    }
+
+    /**
+     * @param string ...$keys
+     * @return void
+     */
+    public static function removeMiddlewares(string ...$keys)
+    {
+        foreach ($keys as $key) {
+            if (isset(self::$middlewares[$key])) {
+                unset(self::$middlewares[$key]);
+            }
+        }
     }
 
     /**
