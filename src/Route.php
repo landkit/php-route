@@ -338,10 +338,14 @@ class Route
             return;
         }
 
-        foreach (self::$routes[self::$httpMethod] as $key => $route) {
-            if (preg_match("~^{$key}$~", self::$patch)) {
-                self::$currentRoute = $route;
-                break;
+        if (isset(self::$routes[self::$httpMethod][self::$patch])) {
+            self::$currentRoute = self::$routes[self::$httpMethod][self::$patch];
+        } else {
+            foreach (self::$routes[self::$httpMethod] as $key => $route) {
+                if (preg_match("~^{$key}$~", self::$patch)) {
+                    self::$currentRoute = $route;
+                    break;
+                }
             }
         }
 
